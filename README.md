@@ -48,12 +48,25 @@
 
 ---
 
-### 5. batch_git_remote.ps1 (批次遠端檢查)
-掃描 `ROOT_PATH` 下所有 Git 專案的遠端位址 (`git remote -v`)。
+### 5. batch_git_remote.ps1 (批次遠端檢查與導出)
+掃描 `ROOT_PATH` 下所有 Git 專案的遠端位址 (`git remote -v`)，並自動分類與導出可用清單。
+
+#### 功能特點
+- **雙 Log 分流**：
+    - **`git_remote_list.log`**: 紀錄標準 2 筆遠端 (fetch/push) 的專案。
+    - **`git_remote_debug.log`**: 紀錄擁有 3 筆以上遠端位址的複雜專案。
+- **自動導出清單**：自動將標準公開專案導出至 **`extracted_projects.txt`**。
+- **智慧過濾**：
+    - 自動排除 **Private (私人)** 與 **Fork** 專案。
+    - 自動排除 Description 開頭為 **✅** 的已完成專案。
+- **格式相容**：導出的內容格式完全符合 `projects.txt` 要求。
 
 #### 使用方法
 - 在 PowerShell 中執行：`./batch_git_remote.ps1`
-- **記錄檔**：所有專案的遠端位址會記錄在 `git_remote_list.log` 中。
+- **結果檔案**：
+    - 標準清單：`git_remote_list.log`
+    - 調試合併：`git_remote_debug.log`
+    - 導出專案：`extracted_projects.txt`
 
 ---
 
@@ -83,13 +96,14 @@ GITHUB_ACCOUNT=your_username        # 您的主要 GitHub 帳號
 
 本工具產生的日誌檔案均已加入 `.gitignore`，不會被上傳：
 
-- **`create_log.log`**: 記錄 `batch_gh_create.ps1` 的執行結果。
-    - `[SUCCESS]`: 成功建立新倉庫。
-    - `[EXIST]`: 倉庫已存在（公開專案）。
-    - `[WARN]`: 略過私人專案或 Fork 專案的警告紀錄。
-    - `[ERROR]`: 建立失敗及其詳細原因。
+- **`create_log.log`**: 記錄 `batch_gh_create.ps1` 的執行結果，包含專案詳細資訊與本地遠端位址。
+- **`git_remote_list.log`**: 記錄掃描到的標準 2 筆遠端 (fetch/push) 專案。
+- **`git_remote_debug.log`**: 記錄擁有多重遠端位址的專案，方便調試。
+- **`extracted_projects.txt`**: 根據過濾條件導出的可用專案清單，其格式符合 `projects.txt`。
 - **`git_pull_errors.log`**: 記錄 `batch_git_pull.ps1` 執行失敗的倉庫。
 - **`git_status_changed.log`**: 記錄 `batch_git_status.ps1` 偵測到有異動的檔案清單。
+
+> 💡 **提示**：所有 Log 與導出檔案在每次對應的腳本啟動時，都會自動清空舊資料。
 
 ---
 
