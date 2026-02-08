@@ -273,6 +273,52 @@ if ($mainAccount) {
                     if ($LASTEXITCODE -eq 0) {
                         Write-Host "  ✅ 更新成功" -ForegroundColor Green
                         "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') [UPDATE] $mainRepoFull description updated with ⁉️" | Out-File -FilePath $createLogPath -Append
+                        
+                        # 執行專案目錄的 setup_git_sync.ps1
+                        $projectDir = Join-Path $rootPath $repoName
+                        $setupScript = Join-Path $projectDir "setup_git_sync.ps1"
+                        
+                        if (Test-Path $setupScript) {
+                            Write-Host "  執行 setup_git_sync.ps1..." -ForegroundColor Cyan
+                            Push-Location $projectDir
+                            try {
+                                & .\setup_git_sync.ps1
+                                Write-Host "  ✅ setup_git_sync.ps1 執行完成" -ForegroundColor Green
+                                "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') [SYNC] $repoName setup_git_sync.ps1 executed" | Out-File -FilePath $createLogPath -Append
+                                
+                                # 檢查 git status 是否有差異
+                                $gitStatus = git status --porcelain 2>$null
+                                if ($gitStatus) {
+                                    Write-Host "  偵測到 Git 變更，執行自動 commit..." -ForegroundColor Cyan
+                                    git add -A
+                                    git commit -m "chore: 更新 git sync 設定"
+                                    
+                                    if ($LASTEXITCODE -eq 0) {
+                                        Write-Host "  ✅ 自動 commit 完成" -ForegroundColor Green
+                                        "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') [COMMIT] $repoName auto committed" | Out-File -FilePath $createLogPath -Append
+                                        
+                                        # 執行 git pull
+                                        Write-Host "  執行 git pull..." -ForegroundColor Cyan
+                                        git pull --rebase 2>&1 | Out-Null
+                                        
+                                        if ($LASTEXITCODE -eq 0) {
+                                            Write-Host "  ✅ git pull 完成" -ForegroundColor Green
+                                        } else {
+                                            Write-Host "  ⚠️ git pull 有警告或衝突，請手動檢查" -ForegroundColor Yellow
+                                        }
+                                    } else {
+                                        Write-Host "  ⚠️ 自動 commit 失敗" -ForegroundColor Yellow
+                                    }
+                                } else {
+                                    Write-Host "  無 Git 變更，跳過 commit" -ForegroundColor Gray
+                                }
+                            } catch {
+                                Write-Host "  ❌ setup_git_sync.ps1 執行失敗: $($_.Exception.Message)" -ForegroundColor Red
+                            }
+                            Pop-Location
+                        } else {
+                            Write-Host "  ⚠️ 找不到 setup_git_sync.ps1，跳過" -ForegroundColor Yellow
+                        }
                     } else {
                         Write-Host "  ❌ 更新失敗" -ForegroundColor Red
                     }
