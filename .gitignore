@@ -12,3 +12,5 @@ projects.txt
 accounts.txt
 extracted_projects.txt
 repos_to_done.txt
+
+.python-version
